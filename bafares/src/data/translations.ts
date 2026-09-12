@@ -45,15 +45,10 @@ export interface Translations {
     categories: {
       all: string;
       breakfast: string;
-      supplements: string;
-      juices: string;
-      drinks: string;
-      beldi: string;
-      harcha_rghifa: string;
-      crepes: string;
-      sales: string;
-      laitiers: string;
-      omelettes: string;
+      mains: string;
+      dairy_drinks: string;
+      fresh_juices: string;
+      pastries: string;
     };
     dh: string;
     viewDetails: string;
@@ -149,16 +144,11 @@ export const translations: Record<Language, Translations> = {
       notice: 'Menu informatif — Les prix sont donnés à titre indicatif et applicables sur place.',
       categories: {
         all: 'Tous les plats',
-        breakfast: 'Petit-Déjeuner',
-        supplements: 'Suppléments',
-        juices: 'Nos Jus',
-        drinks: 'Nos Boissons',
-        beldi: 'Beldi',
-        harcha_rghifa: 'Harcha & Rghifa',
-        crepes: 'Crêpes & Galettes',
-        sales: 'Les Salés',
-        laitiers: 'Laitiers',
-        omelettes: 'Nos Omelettes',
+        breakfast: 'Petit-Déjeuner Beldi',
+        mains: 'Plats Traditionnels',
+        dairy_drinks: 'Laitiers & Thé',
+        fresh_juices: 'Jus Frais',
+        pastries: 'Salés & Pâtisseries',
       },
       dh: 'DH',
       viewDetails: 'Savoir plus',
@@ -252,16 +242,11 @@ export const translations: Record<Language, Translations> = {
       notice: 'قائمة إعلامية — الأسعار استرشادية ومطبقة داخل المطعم.',
       categories: {
         all: 'جميع الأطباق',
-        breakfast: 'فطور',
-        supplements: 'مكملات',
-        juices: 'عصائرنا',
-        drinks: 'مشروباتنا',
-        beldi: 'بلدي',
-        harcha_rghifa: 'حرشة ورغايف',
-        crepes: 'كريب وغاليت',
-        sales: 'مالحات',
-        laitiers: 'ألبان',
-        omelettes: 'أومليت',
+        breakfast: 'فطور بلدي مغربي',
+        mains: 'أطباق تقليدية',
+        dairy_drinks: 'ألبان وشاي',
+        fresh_juices: 'عصائر طازجة',
+        pastries: 'مملحات وحلويات',
       },
       dh: 'درهم',
       viewDetails: 'تفاصيل الطبق',
@@ -355,16 +340,11 @@ export const translations: Record<Language, Translations> = {
       notice: 'Informational menu — Prices are indicative and applicable in-house.',
       categories: {
         all: 'All Dishes',
-        breakfast: 'Breakfast',
-        supplements: 'Extras',
-        juices: 'Fresh Juices',
-        drinks: 'Hot Drinks',
-        beldi: 'Beldi',
-        harcha_rghifa: 'Harcha & Rghifa',
-        crepes: 'Crêpes & Galettes',
-        sales: 'Savories',
-        laitiers: 'Dairy',
-        omelettes: 'Omelettes',
+        breakfast: 'Moroccan Breakfast',
+        mains: 'Traditional Meals',
+        dairy_drinks: 'Dairy & Tea',
+        fresh_juices: 'Fresh Juices',
+        pastries: 'Pastries & Savories',
       },
       dh: 'MAD',
       viewDetails: 'Learn More',

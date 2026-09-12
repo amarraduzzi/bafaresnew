@@ -1,17 +1,6 @@
 export type Language = 'fr' | 'ar' | 'en';
 
-export type CategoryId =
-  | 'all'
-  | 'breakfast'
-  | 'supplements'
-  | 'juices'
-  | 'drinks'
-  | 'beldi'
-  | 'harcha_rghifa'
-  | 'crepes'
-  | 'sales'
-  | 'laitiers'
-  | 'omelettes';
+export type CategoryId = 'all' | 'breakfast' | 'mains' | 'dairy_drinks' | 'fresh_juices' | 'pastries';
 
 export interface MenuItem {
   id: string;
@@ -23,7 +12,7 @@ export interface MenuItem {
   descEn: string;
   category: CategoryId;
   price: number; // In Moroccan Dirhams (DH)
-  image?: string;
+  image: string;
   tagFr?: string;
   tagAr?: string;
   tagEn?: string;
