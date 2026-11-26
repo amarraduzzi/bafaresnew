@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({ lang, setLang }) => {
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-gradient-to-b from-black/85 to-transparent">
       <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-        <a href="#pluie" aria-label="Ba Fares" className="shrink-0">
+        <a href="#hero" aria-label="Ba Fares" className="shrink-0">
           <img src={logo} alt="Ba Fares" className="w-11 h-11 rounded-full object-cover ring-2 ring-[#E5BE01]" />
         </a>
 

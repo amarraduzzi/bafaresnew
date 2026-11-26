@@ -1,223 +1,176 @@
-import React from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
-import { UtensilsCrossed, MapPin, Clock, ShieldCheck, Heart } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { animate, motion, useMotionValue, useMotionValueEvent, useReducedMotion, useTransform } from 'motion/react';
 import { Language } from '../types';
 import { translations } from '../data/translations';
-import { ASSETS } from '../data/menuData';
+import { YEAR_NOW, YEAR_START } from '../data/scenes';
+import thenImg from '../assets/images/hero-then.webp';
+import nowImg from '../assets/images/hero-now.webp';
 
-interface HeroProps {
+// Plek van het rietje in het beeld (in %). Hier begint de kleur.
+const OX = 77;
+const OY = 28;
+const R_MAX = 125; // straal in % tot de kleur het hele beeld vult
+const RING = 1.619; // straal-% omgerekend naar breedte-% van de ring
+const RATIO = 1376 / 768;
+
+const COPY: Record<Language, { h: string; sub: string; time: string; scroll: string }> = {
+  fr: { h: 'Le même verre.', sub: 'Ba Fares, Diour Jamaa, Rabat', time: 'Voyager dans le temps', scroll: 'Défiler' },
+  ar: { h: 'نفس الكأس.', sub: 'با فارس، ديور الجامع، الرباط', time: 'سافر عبر الزمن', scroll: 'مرّر' },
+  en: { h: 'The same glass.', sub: 'Ba Fares, Diour Jamaa, Rabat', time: 'Travel through time', scroll: 'Scroll' },
+};
+
+interface Props {
   lang: Language;
+  ready: boolean; // start pas als de opening klaar is
 }
 
-export const Hero: React.FC<HeroProps> = ({ lang }) => {
+// De hero: zwart-wit 1957 met één geel voorwerp. Vanuit het rietje stroomt de
+// kleur over het beeld naar nu. Daarna kan de bezoeker zelf door de tijd schuiven.
+export const Hero: React.FC<Props> = ({ lang, ready }) => {
   const t = translations[lang];
+  const c = COPY[lang];
+  const reduce = useReducedMotion();
+  const p = useMotionValue(0);
+  const [pv, setPv] = useState(0);
+  const ctrl = useRef<ReturnType<typeof animate> | null>(null);
+  const started = useRef(false);
 
-  // Lightweight parallax transform on scroll
-  const { scrollY } = useScroll();
-  const heroImageParallaxY = useTransform(scrollY, [0, 600], [0, 36]);
-  const heroImageRotate = useTransform(scrollY, [0, 600], [0, -1]);
+  useMotionValueEvent(p, 'change', (v) => setPv(v));
 
-  // Split tagline for sequenced fade-up animation
-  const taglineParts = t.hero.tagline.split(',');
-  const mainLine = taglineParts[0]?.trim() || t.hero.tagline;
-  const subLine = taglineParts[1]?.trim() || '';
+  const clip = useTransform(p, (v) => `circle(${v * R_MAX}% at ${OX}% ${OY}%)`);
+  const ringW = useTransform(p, (v) => `${v * R_MAX * RING}%`);
+  const ringO = useTransform(p, [0, 0.02, 0.96, 1], [0, 1, 1, 0]);
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.12,
-        delayChildren: 0.05,
-      },
-    },
+  const play = () => {
+    ctrl.current?.stop();
+    ctrl.current = animate(p, 1, { duration: 4.2, ease: [0.65, 0, 0.35, 1] });
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 24 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.65,
-        ease: [0.215, 0.61, 0.355, 1],
-      },
-    },
-  };
+  useEffect(() => {
+    if (!ready || started.current) return;
+    started.current = true;
+    if (reduce) { p.set(1); return; }
+    const id = window.setTimeout(play, 1800);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, reduce]);
 
-  const imageVariants = {
-    hidden: { opacity: 0, scale: 0.93, y: 20 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: {
-        duration: 0.75,
-        ease: [0.215, 0.61, 0.355, 1],
-      },
-    },
+  const year = Math.round(YEAR_START + (YEAR_NOW - YEAR_START) * pv);
+  const mirror = lang === 'ar';
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const on = () => setMobile(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+
+  const plate = {
+    containerType: 'size',
+    // Op een telefoon iets groter, met het glas in de bovenste helft
+    '--pw': `calc(max(100cqw, calc(100cqh * ${RATIO})) * ${mobile ? 1.15 : 1})`,
+  } as React.CSSProperties;
+  const plateBox: React.CSSProperties = {
+    width: 'var(--pw)',
+    height: `calc(var(--pw) / ${RATIO})`,
+    left: 'clamp(calc(100cqw - var(--pw)), calc(50cqw - var(--pw) * 0.68), 0px)',
+    top: `clamp(calc(100cqh - var(--pw) / ${RATIO}), calc(${mobile ? 31 : 50}cqh - var(--pw) / ${RATIO} * 0.4), 0px)`,
   };
 
   return (
-    <section
-      id="hero"
-      className="relative overflow-hidden pt-6 pb-14 md:pt-10 md:pb-20 bg-gradient-to-b from-[#F2C230] via-[#F5C518] to-[#E5B518] text-[#3B1F0F] selection:bg-[#3B1F0F] selection:text-[#F2C230]"
-    >
-      {/* Background Moroccan Zellige Subtle Texture */}
-      <div className="absolute inset-0 bg-zellige-pattern opacity-10 pointer-events-none mix-blend-multiply" />
+    <section id="hero" className="relative w-full h-[100svh] overflow-hidden bg-black" style={plate}>
+      {/* Beeldplaat: toen (zwart-wit) onderaan, nu (kleur) in een groeiende cirkel erboven */}
+      <div className="absolute inset-0" style={mirror ? { transform: 'scaleX(-1)' } : undefined}>
+        <div className="absolute" style={plateBox}>
+          <img src={thenImg} alt="" aria-hidden className="absolute inset-0 w-full h-full" />
+          <motion.img
+            src={nowImg}
+            alt="Un verre de lait avec une paille jaune sur le comptoir de Ba Fares"
+            className="absolute inset-0 w-full h-full"
+            style={{ clipPath: clip, WebkitClipPath: clip }}
+          />
 
-      {/* Repeating Watermark Marquee Background */}
-      <div className="absolute inset-0 pointer-events-none opacity-[0.14] select-none flex items-center overflow-hidden z-0">
-        <div className="animate-marquee whitespace-nowrap text-7xl sm:text-9xl font-black font-serif text-[#3B1F0F] tracking-tight">
-          BAFARES 1957 • LE GOÛT DU BLED • RABAT DIOUR JAMAA • BAFARES 1957 • LE GOÛT DU BLED • RABAT DIOUR JAMAA •
+          {/* Gele golf aan de rand van de kleur */}
+          <motion.div
+            aria-hidden
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              left: `${OX}%`,
+              top: `${OY}%`,
+              width: ringW,
+              aspectRatio: '1 / 1',
+              translateX: '-50%',
+              translateY: '-50%',
+              opacity: ringO,
+              border: '3px solid #E5BE01',
+              boxShadow: '0 0 60px 10px rgba(229,190,1,.45), inset 0 0 60px 6px rgba(229,190,1,.25)',
+            }}
+          />
+
+          {/* Pulserend punt op het rietje, tot het begint */}
+          {pv < 0.02 && (
+            <button
+              type="button"
+              onClick={play}
+              aria-label={c.time}
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 grid place-items-center"
+              style={{ left: `${OX}%`, top: `${OY}%` }}
+            >
+              <span className="absolute w-8 h-8 rounded-full bg-[#E5BE01]/50 animate-ping" />
+              <span className="relative w-4 h-4 rounded-full bg-[#E5BE01] ring-2 ring-black/60" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
-          {/* PROMINENT CHEF MASCOT VISUAL CENTERPIECE (Top on Mobile, Right on Desktop) */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={imageVariants}
-            className="order-first lg:order-last lg:col-span-5 flex flex-col items-center justify-center relative my-2 lg:my-0 w-full"
+      {/* Leesbaarheid van de tekst */}
+      <div aria-hidden className="absolute inset-0 pointer-events-none md:hidden bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
+      <div aria-hidden className="absolute inset-0 pointer-events-none hidden md:block ltr:bg-gradient-to-r rtl:bg-gradient-to-l from-black/85 via-black/45 to-transparent" />
+      <div aria-hidden className="grain-hero absolute inset-0 pointer-events-none" style={{ opacity: 1 - pv }} />
+
+      {/* Tekst */}
+      <div className="absolute inset-0 flex flex-col justify-end md:justify-center px-6 md:px-16 pb-36 md:pb-0 pointer-events-none">
+        <div className="max-w-xl pointer-events-auto">
+          <h1 className="text-white font-black leading-[0.95] tracking-tight text-4xl sm:text-5xl md:text-6xl">{c.h}</h1>
+          <p
+            aria-live="off"
+            className="text-[#E5BE01] font-black leading-[0.85] tabular-nums tracking-tighter text-[24vw] md:text-[14vw] mt-2"
           >
-            {/* Parallax Container */}
-            <motion.div
-              style={{ y: heroImageParallaxY, rotate: heroImageRotate }}
-              className="relative w-full max-w-lg lg:max-w-none flex flex-col items-center justify-center group"
-            >
-              {/* Outer Golden Aura Glow */}
-              <div className="absolute inset-0 rounded-3xl bg-[#FFFDF9]/50 blur-2xl transform scale-105 -z-10 pointer-events-none" />
-
-              {/* Main Hero Mascot Image Card with Respiration Pulse Animation */}
-              <div className="animate-logo-breath relative w-full rounded-3xl p-2.5 sm:p-3 bg-[#FFFDF9] border-4 sm:border-6 border-[#3B1F0F] shadow-2xl transition-transform duration-500 hover:scale-[1.02]">
-                
-                {/* Inner Decorative Golden Frame */}
-                <div className="rounded-2xl p-1.5 bg-gradient-to-tr from-[#F2C230] via-[#FFE380] to-[#F2C230] border-2 border-[#3B1F0F] overflow-hidden">
-                  
-                  {/* Image Container with Responsive Mobile vs Desktop Framing */}
-                  <div className="relative w-full h-[260px] sm:h-[340px] lg:h-[380px] rounded-xl overflow-hidden bg-[#FAF6EE] border-2 border-[#3B1F0F] shadow-inner">
-                    <picture>
-                      <source
-                        type="image/webp"
-                        srcSet={`${ASSETS.heroWebp} 1672w`}
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                      />
-                      <img
-                        src={ASSETS.heroWebp}
-                        alt="Chef mascotte Ba Fares, restaurant traditionnel marocain à Rabat depuis 1957"
-                        loading="eager"
-                        decoding="async"
-                        className="w-full h-full object-cover object-[center_15%] sm:object-[center_20%] lg:object-contain transition-transform duration-700 hover:scale-105"
-                        referrerPolicy="no-referrer"
-                      />
-                    </picture>
-                  </div>
-
-                </div>
-
-                {/* Bottom Ribbon Seal Overlay */}
-                <div className="absolute -bottom-4 sm:-bottom-5 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full bg-[#3B1F0F] text-[#F2C230] text-xs sm:text-sm font-black uppercase tracking-widest shadow-xl border-2 border-[#F2C230] whitespace-nowrap flex items-center gap-2 z-30">
-                  <span className="text-[#F2C230]">★</span>
-                  <span>BA FARES • RABAT 1957</span>
-                  <span className="text-[#F2C230]">★</span>
-                </div>
-              </div>
-
-            </motion.div>
-          </motion.div>
-
-          {/* MAIN TEXT & CTAs COLUMN (Bottom on Mobile, Left on Desktop) */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="order-last lg:order-first lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-start space-y-5 sm:space-y-6"
-          >
-            {/* Title with Sequenced Fade-Up (Without duplicate pill badge above) */}
-            <motion.h1
-              variants={itemVariants}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#3B1F0F] font-serif leading-[1.1] tracking-tight"
-            >
-              <span className="block drop-shadow-xs">
-                {mainLine}
-              </span>
-              {subLine && (
-                <span className="block text-[#2B1408] text-3xl sm:text-5xl lg:text-6xl mt-2 font-serif italic font-medium underline decoration-[#3B1F0F]/30 decoration-wavy underline-offset-8">
-                  {subLine}
-                </span>
-              )}
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              variants={itemVariants}
-              className="text-base sm:text-xl text-[#3B1F0F]/90 font-medium leading-relaxed max-w-2xl"
-            >
-              {t.hero.subtitle}
-            </motion.p>
-
-            {/* Action CTAs with Scale & Shadow Intensification */}
-            <motion.div
-              variants={itemVariants}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2 w-full sm:w-auto"
-            >
-              {/* Menu CTA */}
-              <a
-                href="#menu"
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-base font-extrabold text-[#F2C230] bg-[#3B1F0F] border-2 border-[#3B1F0F] shadow-lg hover:shadow-2xl hover:shadow-[#3B1F0F]/35 hover:scale-105 transition-all duration-300 transform active:scale-95 focus:outline-none"
-              >
-                <UtensilsCrossed className="w-5 h-5 text-[#F2C230] transition-transform duration-300 group-hover:rotate-12" />
-                <span>{t.hero.ctaMenu}</span>
-              </a>
-
-              {/* Find Us CTA */}
-              <a
-                href="#nous-trouver"
-                className="group w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-base font-extrabold text-[#3B1F0F] bg-[#FFFDF9] border-2 border-[#3B1F0F] shadow-md hover:shadow-xl hover:bg-[#3B1F0F] hover:text-[#F2C230] hover:scale-105 transition-all duration-300 transform active:scale-95 focus:outline-none"
-              >
-                <MapPin className="w-5 h-5 text-[#3B1F0F] group-hover:text-[#F2C230] transition-colors duration-300" />
-                <span>{t.hero.ctaFindUs}</span>
-              </a>
-            </motion.div>
-
-            {/* Feature Highlights Grid */}
-            <motion.div
-              variants={itemVariants}
-              className="grid grid-cols-3 gap-3 pt-6 w-full max-w-xl border-t-2 border-[#3B1F0F]/20"
-            >
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-start p-3 rounded-2xl bg-[#FFFDF9]/80 border-2 border-[#3B1F0F]/15 backdrop-blur-xs shadow-xs">
-                <span className="text-xs sm:text-sm font-extrabold text-[#3B1F0F] flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-[#3B1F0F]" />
-                  {t.hero.feature1}
-                </span>
-                <span className="text-[11px] sm:text-xs text-[#5A321B] font-semibold mt-0.5">Recettes fait maison</span>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-start p-3 rounded-2xl bg-[#FFFDF9]/80 border-2 border-[#3B1F0F]/15 backdrop-blur-xs shadow-xs">
-                <span className="text-xs sm:text-sm font-extrabold text-[#3B1F0F] flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-[#3B1F0F]" />
-                  {t.hero.feature2}
-                </span>
-                <span className="text-[11px] sm:text-xs text-[#5A321B] font-semibold mt-0.5">100% Produits Beldi</span>
-              </div>
-
-              <div className="flex flex-col items-center lg:items-start text-center lg:text-start p-3 rounded-2xl bg-[#FFFDF9]/80 border-2 border-[#3B1F0F]/15 backdrop-blur-xs shadow-xs">
-                <span className="text-xs sm:text-sm font-extrabold text-[#3B1F0F] flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-[#3B1F0F]" />
-                  {t.hero.feature3}
-                </span>
-                <span className="text-[11px] sm:text-xs text-[#5A321B] font-semibold mt-0.5">Savoir-faire 1957</span>
-              </div>
-            </motion.div>
-
-          </motion.div>
-
+            {year}
+          </p>
+          <p className="text-white/80 text-base md:text-lg font-medium mt-3">{c.sub}</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a href="#menu" className="bg-[#E5BE01] text-black font-extrabold px-6 py-3 hover:bg-white transition-colors">
+              {t.hero.ctaMenu}
+            </a>
+            <a href="#nous-trouver" className="border-2 border-white/70 text-white font-bold px-6 py-[10px] hover:border-[#E5BE01] hover:text-[#E5BE01] transition-colors">
+              {t.hero.ctaFindUs}
+            </a>
+          </div>
         </div>
       </div>
+
+      {/* Tijdschuiver */}
+      <div className="absolute bottom-6 inset-x-0 px-6 md:px-16 flex items-center gap-3 text-white/80 text-xs font-bold">
+        <span className="tabular-nums">{YEAR_START}</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.001}
+          value={pv}
+          aria-label={c.time}
+          aria-valuetext={String(year)}
+          onChange={(e) => { ctrl.current?.stop(); p.set(Number(e.target.value)); }}
+          className="time-range flex-1 max-w-md"
+          style={{ '--v': `${pv * 100}%` } as React.CSSProperties}
+        />
+        <span className="tabular-nums">{YEAR_NOW}</span>
+      </div>
+      <p className="absolute bottom-16 md:bottom-14 inset-x-0 text-center text-white/60 text-xs font-medium pointer-events-none md:hidden">
+        {c.time}
+      </p>
     </section>
   );
 };

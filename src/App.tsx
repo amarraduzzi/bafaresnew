@@ -2,10 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, useReducedMotion } from 'motion/react';
 import { Language } from './types';
 import { Header } from './components/Header';
+import { Hero } from './components/Hero';
 import { Intro } from './components/Intro';
 import { Timeline } from './components/Timeline';
 import { StoryScene } from './components/StoryScene';
 import { YellowInterlude } from './components/YellowInterlude';
+import { Lantern } from './components/Lantern';
+import { Zellige } from './components/Zellige';
 import { MenuSection } from './components/MenuSection';
 import { FindUsSection } from './components/FindUsSection';
 import { Footer } from './components/Footer';
@@ -42,11 +45,15 @@ export default function App() {
       <Header lang={lang} setLang={setLang} />
 
       <main>
+        <Hero lang={lang} ready={!intro} />
         <StoryScene scene={pluie} lang={lang} />
         <StoryScene scene={pere} lang={lang} />
         <StoryScene scene={ici} lang={lang} />
+        <Lantern lang={lang} />
         <YellowInterlude lang={lang} />
+        <Zellige />
         <StoryScene scene={chef} lang={lang} />
+        <Zellige />
 
         {/* Tijdelijk: oude secties, volgen in stap 3 en 4 het nieuwe ontwerp */}
         <div className="bg-[#FAF6EE] text-[#3B1F0F]">
