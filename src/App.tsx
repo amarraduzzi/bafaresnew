@@ -10,6 +10,7 @@ import { StoryScene } from './components/StoryScene';
 import { YellowInterlude } from './components/YellowInterlude';
 import { Lantern } from './components/Lantern';
 import { Zellige } from './components/Zellige';
+import { Signatures } from './components/Signatures';
 import { MenuSection } from './components/MenuSection';
 import { FindUsSection } from './components/FindUsSection';
 import { Footer } from './components/Footer';
@@ -67,8 +68,10 @@ export default function App() {
         <Zellige />
         <StoryScene scene={chef} lang={lang} />
         <Zellige />
+        <Signatures lang={lang} />
+        <Zellige />
 
-        {/* Tijdelijk: oude secties, volgen in stap 3 en 4 het nieuwe ontwerp */}
+        {/* Tijdelijk: oude secties, volgen in stap 4 en verder het nieuwe ontwerp */}
         <div className="bg-[#FAF6EE] text-[#3B1F0F]">
           <MenuSection lang={lang} />
           <FindUsSection lang={lang} />
