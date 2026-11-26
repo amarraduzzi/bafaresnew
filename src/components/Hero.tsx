@@ -5,6 +5,7 @@ import { translations } from '../data/translations';
 import { YEAR_NOW, YEAR_START } from '../data/scenes';
 import thenImg from '../assets/images/hero-then.webp';
 import nowImg from '../assets/images/hero-now.webp';
+import logo from '../assets/images/bafareslogo.jpg';
 
 // Plek van het rietje in het beeld (in %). Hier begint de kleur.
 const OX = 77;
@@ -21,12 +22,13 @@ const COPY: Record<Language, { h: string; sub: string; time: string; scroll: str
 
 interface Props {
   lang: Language;
-  ready: boolean; // start pas als de opening klaar is
+  ready: boolean; // start pas als het logo bij het rietje is geland
+  anchorRef: React.RefObject<HTMLDivElement | null>;
 }
 
 // De hero: zwart-wit 1957 met één geel voorwerp. Vanuit het rietje stroomt de
 // kleur over het beeld naar nu. Daarna kan de bezoeker zelf door de tijd schuiven.
-export const Hero: React.FC<Props> = ({ lang, ready }) => {
+export const Hero: React.FC<Props> = ({ lang, ready, anchorRef }) => {
   const t = translations[lang];
   const c = COPY[lang];
   const reduce = useReducedMotion();
@@ -50,7 +52,7 @@ export const Hero: React.FC<Props> = ({ lang, ready }) => {
     if (!ready || started.current) return;
     started.current = true;
     if (reduce) { p.set(1); return; }
-    const id = window.setTimeout(play, 1800);
+    const id = window.setTimeout(play, 700);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, reduce]);
@@ -108,6 +110,14 @@ export const Hero: React.FC<Props> = ({ lang, ready }) => {
             }}
           />
 
+          {/* Vaste plek van het rietje: hier landt het logo */}
+          <div
+            ref={anchorRef}
+            aria-hidden
+            className="absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+            style={{ left: `${OX}%`, top: `${OY}%` }}
+          />
+
           {/* Pulserend punt op het rietje, tot het begint */}
           {pv < 0.02 && (
             <button
@@ -154,18 +164,28 @@ export const Hero: React.FC<Props> = ({ lang, ready }) => {
       {/* Tijdschuiver */}
       <div className="absolute bottom-6 inset-x-0 px-6 md:px-16 flex items-center gap-3 text-white/80 text-xs font-bold">
         <span className="tabular-nums">{YEAR_START}</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.001}
-          value={pv}
-          aria-label={c.time}
-          aria-valuetext={String(year)}
-          onChange={(e) => { ctrl.current?.stop(); p.set(Number(e.target.value)); }}
-          className="time-range flex-1 max-w-md"
-          style={{ '--v': `${pv * 100}%` } as React.CSSProperties}
-        />
+        <div className="relative flex-1 max-w-md h-11 flex items-center">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={pv}
+            aria-label={c.time}
+            aria-valuetext={String(year)}
+            onChange={(e) => { ctrl.current?.stop(); p.set(Number(e.target.value)); }}
+            className="time-range w-full"
+            style={{ '--v': `${pv * 100}%` } as React.CSSProperties}
+          />
+          {/* Het logo is de schuifknop: zwart-wit in 1957, in kleur in 2026 */}
+          <span
+            aria-hidden
+            className="absolute top-1/2 -translate-y-1/2 w-11 h-11 rounded-full overflow-hidden bg-black pointer-events-none shadow-[0_0_0_3px_#E5BE01,0_4px_14px_rgba(0,0,0,.6)]"
+            style={{ left: `calc(${pv} * (100% - 44px))` }}
+          >
+            <img src={logo} alt="" className="w-full h-full object-cover" style={{ filter: `grayscale(${1 - pv})` }} />
+          </span>
+        </div>
         <span className="tabular-nums">{YEAR_NOW}</span>
       </div>
       <p className="absolute bottom-16 md:bottom-14 inset-x-0 text-center text-white/60 text-xs font-medium pointer-events-none md:hidden">

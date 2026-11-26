@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence, useReducedMotion } from 'motion/react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Language } from './types';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { Intro } from './components/Intro';
+import { LogoFlight, Phase } from './components/LogoFlight';
 import { Timeline } from './components/Timeline';
 import { StoryScene } from './components/StoryScene';
 import { YellowInterlude } from './components/YellowInterlude';
@@ -14,19 +15,30 @@ import { FindUsSection } from './components/FindUsSection';
 import { Footer } from './components/Footer';
 import { SCENES } from './data/scenes';
 
-const seen = () => {
-  try { return sessionStorage.getItem('bf_intro') === '1'; } catch { return false; }
+const skipIntro = () => {
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return true;
+    return sessionStorage.getItem('bf_intro') === '1';
+  } catch { return false; }
 };
 
 export default function App() {
   const [lang, setLang] = useState<Language>('fr');
-  const reduce = useReducedMotion();
-  const [intro, setIntro] = useState(() => !seen());
+  const [phase, setPhase] = useState<Phase>(() => (skipIntro() ? 'done' : 'intro'));
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   const finish = useCallback(() => {
     try { sessionStorage.setItem('bf_intro', '1'); } catch { /* geen opslag */ }
-    setIntro(false);
+    setPhase('fly');
   }, []);
+
+  const landed = useCallback(() => setPhase('done'), []);
+
+  // Scroll vergrendeld tijdens opening en vlucht van het logo
+  useEffect(() => {
+    document.body.style.overflow = phase === 'done' ? '' : 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, [phase]);
 
   useEffect(() => {
     const el = document.documentElement;
@@ -38,14 +50,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans antialiased">
-      <AnimatePresence>{intro && !reduce && <Intro onDone={finish} />}</AnimatePresence>
+      <AnimatePresence>{phase === 'intro' && <Intro onDone={finish} />}</AnimatePresence>
+      <LogoFlight phase={phase} anchorRef={anchorRef} onLanded={landed} />
 
       <div aria-hidden className="grain" />
       <Timeline />
       <Header lang={lang} setLang={setLang} />
 
       <main>
-        <Hero lang={lang} ready={!intro} />
+        <Hero lang={lang} ready={phase === 'done'} anchorRef={anchorRef} />
         <StoryScene scene={pluie} lang={lang} />
         <StoryScene scene={pere} lang={lang} />
         <StoryScene scene={ici} lang={lang} />
