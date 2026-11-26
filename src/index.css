@@ -151,3 +151,42 @@
   background-position: 0 0, 15px 15px;
   background-opacity: 0.05;
 }
+
+/* ===== Nieuw ontwerp (stap 1): zwart, wit en logo-geel #E5BE01 ===== */
+html { background: #000; scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #000;
+  color: #fff;
+}
+[dir="rtl"] body { font-family: 'Cairo', 'Inter', system-ui, sans-serif; }
+::selection { background: #E5BE01; color: #000; }
+::-webkit-scrollbar-track { background: #000; }
+::-webkit-scrollbar-thumb { background: #E5BE01; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+/* Filmkorrel over de hele site */
+.grain {
+  position: fixed; inset: 0; z-index: 30; pointer-events: none; opacity: .07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Licht dat langzaam over het beeld schuift */
+@keyframes lightSweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%)  skewX(-18deg); }
+}
+.light-sweep::before {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+  animation: lightSweep 9s ease-in-out infinite;
+}
+
+a:focus-visible, button:focus-visible { outline: 2px solid #E5BE01; outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .light-sweep::before { animation: none; }
+  .animate-ping { animation: none; }
+}
