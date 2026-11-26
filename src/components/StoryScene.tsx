@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
 import { Language } from '../types';
-import { HINT, Scene } from '../data/scenes';
+import { HINT, SCENES, Scene } from '../data/scenes';
 import { RainCanvas } from './RainCanvas';
 
 interface Props {
@@ -16,15 +16,21 @@ export const StoryScene: React.FC<Props> = ({ scene, lang }) => {
   const [open, setOpen] = useState(false);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], ['-3%', '3%']);
+  // Desktop: zijpaneel met groot hoofdstuknummer, om en om links en rechts
+  const idx = Math.max(0, SCENES.findIndex((s) => s.id === scene.id));
+  const flip = idx % 2 === 1;
+  const numY = useTransform(scrollYProgress, [0, 1], ['18%', '-18%']);
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI'];
 
   return (
     <section
       id={scene.id}
       ref={ref}
-      className="relative h-[100svh] min-h-[520px] overflow-hidden bg-black flex items-center justify-center"
+      className={`relative h-[100svh] min-h-[520px] overflow-hidden bg-black flex items-center justify-center md:gap-16 lg:gap-24 ${flip ? 'md:flex-row-reverse' : 'md:flex-row'}`}
     >
       {/* Vervaagde achtergrond zodat het beeld op elk scherm vult */}
-      <img src={scene.img} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-30" />
+      <img src={scene.img} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-30 md:opacity-15" />
+      <div aria-hidden className="absolute inset-0 hidden md:block bg-gradient-to-r from-black via-black/60 to-black" />
 
       <div className="relative aspect-[9/16] overflow-hidden" style={{ width: 'min(100vw, 56.25svh)' }}>
         <motion.img
@@ -55,7 +61,7 @@ export const StoryScene: React.FC<Props> = ({ scene, lang }) => {
         />
 
         {/* Hoofdstuk-label */}
-        <div className="absolute top-20 inset-x-5 z-10 flex items-center gap-3">
+        <div className="absolute top-20 inset-x-5 z-10 flex items-center gap-3 md:hidden">
           <span className="h-[3px] w-8 bg-[#E5BE01]" />
           <span className="text-[#E5BE01] text-sm font-bold">{scene.chapter[lang]}</span>
         </div>
@@ -101,6 +107,31 @@ export const StoryScene: React.FC<Props> = ({ scene, lang }) => {
           </AnimatePresence>
         </div>
       </div>
+      {/* Zijpaneel, alleen desktop */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, x: flip ? -40 : 40 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, amount: 0.4 }}
+        transition={{ duration: 0.9, delay: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
+        className={`relative hidden md:flex flex-col max-w-sm ${flip ? 'items-end text-end' : 'items-start text-start'}`}
+      >
+        <motion.span
+          style={{ y: numY, WebkitTextStroke: '2px #E5BE01' }}
+          className="font-black leading-none text-transparent text-[180px] lg:text-[240px] tracking-tighter select-none"
+        >
+          {ROMAN[idx]}
+        </motion.span>
+        <span className="mt-2 flex items-center gap-3 text-[#E5BE01] text-sm font-bold">
+          <span className="h-[3px] w-10 bg-[#E5BE01]" />
+          {scene.chapter[lang]}
+        </span>
+        <p className="mt-5 text-white text-3xl lg:text-4xl font-extrabold leading-tight">{scene.caption[lang]}</p>
+        <span className="mt-8 flex items-center gap-2 text-white/50 text-xs font-semibold">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#E5BE01]" />
+          {HINT[lang]}
+        </span>
+      </motion.div>
     </section>
   );
 };
