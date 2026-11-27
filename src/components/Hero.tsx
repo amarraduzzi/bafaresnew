@@ -13,11 +13,20 @@ const OY = 28;
 const R_MAX = 125; // straal in % tot de kleur het hele beeld vult
 const RING = 1.619; // straal-% omgerekend naar breedte-% van de ring
 const RATIO = 1376 / 768;
+// Zegel met het grote logo: plek (in % van het beeld) in de lege tegels boven het glas
+const SEAL_X = 54;
+const SEAL_Y = 18;
 
 const COPY: Record<Language, { h: string; sub: string; time: string; scroll: string }> = {
   fr: { h: 'Le même verre.', sub: 'Ba Fares, Diour Jamaa, Rabat', time: 'Voyager dans le temps', scroll: 'Défiler' },
   ar: { h: 'نفس الكأس.', sub: 'با فارس، ديور الجامع، الرباط', time: 'سافر عبر الزمن', scroll: 'مرّر' },
   en: { h: 'The same glass.', sub: 'Ba Fares, Diour Jamaa, Rabat', time: 'Travel through time', scroll: 'Scroll' },
+};
+
+const SEAL_TEXT: Record<Language, string> = {
+  fr: 'BA FARES · DEPUIS 1957 · RABAT · ',
+  ar: 'BA FARES · 1957 · RABAT · DIOUR JAMAA · ',
+  en: 'BA FARES · SINCE 1957 · RABAT · ',
 };
 
 interface Props {
@@ -138,6 +147,47 @@ export const Hero: React.FC<Props> = ({ lang, ready, anchorRef }) => {
       <div aria-hidden className="absolute inset-0 pointer-events-none md:hidden bg-gradient-to-t from-black/90 via-black/35 to-black/10" />
       <div aria-hidden className="absolute inset-0 pointer-events-none hidden md:block ltr:bg-gradient-to-r rtl:bg-gradient-to-l from-black/85 via-black/45 to-transparent" />
       <div aria-hidden className="grain-hero absolute inset-0 pointer-events-none" style={{ opacity: 1 - pv }} />
+
+      {/* Zegel: het grote logo. Alleen toegevoegd, het beeld en de tekst eromheen blijven zoals ze zijn */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={mirror && !mobile ? { transform: 'scaleX(-1)' } : undefined}
+      >
+        <div className="absolute inset-0" style={mobile ? undefined : plateBox}>
+        <motion.div
+          className="absolute -translate-x-1/2 -translate-y-1/2 aspect-square"
+          style={
+            mobile
+              ? { left: '27%', top: 'max(150px, 20%)', width: 'clamp(112px, 30cqw, 150px)' }
+              : { left: `${SEAL_X}%`, top: `${SEAL_Y}%`, width: 'clamp(116px, 11.5cqw, 210px)' }
+          }
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={ready ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
+          transition={{ duration: reduce ? 0 : 0.9, ease: [0.22, 1, 0.36, 1], delay: reduce ? 0 : 0.3 }}
+        >
+          <div className="absolute inset-0" style={mirror && !mobile ? { transform: 'scaleX(-1)' } : undefined}>
+          <div className="absolute inset-0 rounded-full bg-black/55 backdrop-blur-[2px] shadow-[0_0_0_1.5px_rgba(229,190,1,.9),0_10px_40px_rgba(0,0,0,.55)]" />
+          <motion.svg
+            viewBox="0 0 200 200"
+            className="absolute inset-0 w-full h-full"
+            animate={reduce ? undefined : { rotate: 360 }}
+            transition={{ duration: 40, ease: 'linear', repeat: Infinity }}
+          >
+            <defs>
+              <path id="seal-ring" d="M 100,100 m -83,0 a 83,83 0 1,1 166,0 a 83,83 0 1,1 -166,0" />
+            </defs>
+            <text fill="#E5BE01" fontSize="13" fontWeight="800" fontFamily="Inter, sans-serif">
+              <textPath href="#seal-ring" textLength="518" lengthAdjust="spacing">{SEAL_TEXT[lang]}</textPath>
+            </text>
+          </motion.svg>
+          <div className="absolute rounded-full overflow-hidden bg-black shadow-[0_0_0_3px_#E5BE01]" style={{ inset: '19%' }}>
+            <img src={logo} alt="" className="w-full h-full object-cover" style={{ filter: `grayscale(${1 - pv})` }} />
+          </div>
+          </div>
+        </motion.div>
+        </div>
+      </div>
 
       {/* Tekst */}
       <div className="absolute inset-0 flex flex-col justify-end md:justify-center px-6 md:px-16 pb-36 md:pb-0 pointer-events-none">
