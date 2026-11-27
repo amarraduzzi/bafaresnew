@@ -6,6 +6,21 @@ import { translations } from '../data/translations';
 const MAPS = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Ba Fares Avenue Al Ghazali Imm Frej Diour Jamaa Rabat')}`;
 const EMBED = 'https://www.google.com/maps?q=Avenue+Al+Ghazali+Imm+Frej+N2+Diour+Jamaa+Rabat+Maroc&output=embed';
 
+// Google blokkeert de gratis embed op telefoons en in in-app browsers (Instagram, Facebook...).
+// Daarom: iframe alleen op brede schermen, op mobiel een kaartkaart met knop naar Google Maps.
+const useIsDesktop = () => {
+  const q = '(min-width: 1024px) and (hover: hover) and (pointer: fine)';
+  const [desktop, setDesktop] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
+  useEffect(() => {
+    const m = window.matchMedia(q);
+    const on = () => setDesktop(m.matches);
+    on();
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return desktop;
+};
+
 const isOpen = () => {
   const h = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Africa/Casablanca' }).format(new Date()));
   return h >= 7 && h < 23;
@@ -15,6 +30,7 @@ const isOpen = () => {
 export const FindUs: React.FC<{ lang: Language }> = ({ lang }) => {
   const t = translations[lang].findUs;
   const [open, setOpen] = useState(isOpen);
+  const desktop = useIsDesktop();
   useEffect(() => {
     const id = setInterval(() => setOpen(isOpen()), 60000);
     return () => clearInterval(id);
@@ -55,14 +71,38 @@ export const FindUs: React.FC<{ lang: Language }> = ({ lang }) => {
         </div>
 
         <div className="min-h-[340px] lg:min-h-[480px] border-[5px] border-black bg-neutral-200">
-          <iframe
-            title="Ba Fares, Diour Jamaa, Rabat"
-            src={EMBED}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="w-full h-full min-h-[340px] lg:min-h-[480px] block"
-            style={{ filter: 'grayscale(1) contrast(1.05)' }}
-          />
+          {desktop ? (
+            <iframe
+              title="Ba Fares, Diour Jamaa, Rabat"
+              src={EMBED}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="w-full h-full min-h-[340px] lg:min-h-[480px] block"
+              style={{ filter: 'grayscale(1) contrast(1.05)' }}
+            />
+          ) : (
+            <a
+              href={MAPS}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={t.getDirections}
+              className="relative flex flex-col items-center justify-center gap-5 w-full h-full min-h-[340px] p-8 text-center overflow-hidden"
+              style={{
+                backgroundColor: '#e5e5e5',
+                backgroundImage:
+                  'linear-gradient(#d4d4d4 2px, transparent 2px), linear-gradient(90deg, #d4d4d4 2px, transparent 2px), linear-gradient(#d4d4d4 1px, transparent 1px), linear-gradient(90deg, #d4d4d4 1px, transparent 1px)',
+                backgroundSize: '80px 80px, 80px 80px, 20px 20px, 20px 20px',
+              }}
+            >
+              <span className="flex items-center justify-center w-16 h-16 rounded-full bg-black text-[#E5BE01] shadow-lg">
+                <MapPin size={30} aria-hidden />
+              </span>
+              <span className="font-black text-xl leading-snug text-black max-w-[16rem]">{t.addressValue}</span>
+              <span className="inline-flex items-center gap-2 bg-[#E5BE01] text-black font-extrabold px-6 py-4 border-[3px] border-black">
+                <Navigation size={18} aria-hidden /> {t.getDirections}
+              </span>
+            </a>
+          )}
         </div>
       </div>
     </section>
