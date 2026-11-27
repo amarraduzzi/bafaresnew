@@ -3,9 +3,9 @@ import { animate, motion, useInView, useReducedMotion, useScroll, useTransform }
 import { Language } from '../types';
 import { MENU_ITEMS } from '../data/menuData';
 import { YEAR_NOW, YEAR_START } from '../data/scenes';
-import yaourt from '../assets/images/sig-yaourt.webp';
-import petitdej from '../assets/images/sig-petitdej.webp';
-import harira from '../assets/images/sig-harira.webp';
+import verre from '../assets/images/stat-verre.webp';
+import rghaif from '../assets/images/stat-rghaif.webp';
+import nuit from '../assets/images/stat-nuit.webp';
 
 const useCount = (to: number, on: boolean, still: boolean) => {
   const [v, setV] = useState(still ? to : 0);
@@ -81,9 +81,9 @@ export const Chiffres: React.FC<{ lang: Language }> = ({ lang }) => {
   return (
     <section dir={lang === 'ar' ? 'rtl' : 'ltr'} className="bg-[#E5BE01] text-black py-20 sm:py-28 px-6 sm:px-12 overflow-hidden">
       <div className="max-w-6xl mx-auto grid gap-14 md:grid-cols-3 md:gap-8 items-start">
-        <Col img={yaourt} alt="" num={YEAR_NOW - YEAR_START} label={t.years} index={0} still={reduce} />
-        <Col img={petitdej} alt="" num={MENU_ITEMS.length} label={t.dishes} index={1} still={reduce} className="md:mt-20" />
-        <Col img={harira} alt="" text={t.hoursV} label={t.hours} index={2} still={reduce} className="md:mt-8" />
+        <Col img={verre} alt="" num={YEAR_NOW - YEAR_START} label={t.years} index={0} still={reduce} />
+        <Col img={rghaif} alt="" num={MENU_ITEMS.length} label={t.dishes} index={1} still={reduce} className="md:mt-20" />
+        <Col img={nuit} alt="" text={t.hoursV} label={t.hours} index={2} still={reduce} className="md:mt-8" />
       </div>
     </section>
   );
