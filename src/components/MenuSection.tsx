@@ -5,10 +5,10 @@ import { MENU_ITEMS } from '../data/menuData';
 import { CATEGORIES } from '../data/categories';
 import { translations } from '../data/translations';
 
-const TEXT: Record<Language, { title: string; sub: string }> = {
-  fr: { title: 'Le Menu', sub: 'Les prix du jour, comme sur le tableau.' },
-  ar: { title: 'القائمة', sub: 'أسعار اليوم، كما على اللوحة.' },
-  en: { title: 'The Menu', sub: "Today's prices, like on the board." },
+const TEXT: Record<Language, { title: string; sub: string; count: string }> = {
+  fr: { title: 'Le Menu', sub: 'Les prix du jour, comme sur le tableau.', count: 'plats' },
+  ar: { title: 'القائمة', sub: 'أسعار اليوم، كما على اللوحة.', count: 'أطباق' },
+  en: { title: 'The Menu', sub: "Today's prices, like on the board.", count: 'dishes' },
 };
 
 // De notities in menuData zijn Frans; hier de vertalingen
@@ -37,14 +37,14 @@ const Price: React.FC<{ value: number; unit: string; index: number; animate: boo
   const base = Math.min(index * 0.03, 0.24);
   return (
     <span dir="ltr" className="shrink-0 inline-flex items-baseline gap-2 whitespace-nowrap" style={{ perspective: 500 }}>
-      <span className="inline-flex gap-[3px] text-xl sm:text-2xl leading-none">
+      <span className="inline-flex gap-[3px] text-2xl sm:text-3xl leading-none">
         {String(value)
           .split('')
           .map((ch, i) => (
             <Flap key={i} ch={ch} delay={base + i * 0.04} animate={animate} />
           ))}
       </span>
-      <span className="text-xs sm:text-sm font-bold text-white/60">{unit}</span>
+      <span className="text-xs sm:text-sm font-bold text-white/60 group-hover:text-black/70 transition-colors">{unit}</span>
     </span>
   );
 };
@@ -74,15 +74,14 @@ export const MenuSection: React.FC<{ lang: Language }> = ({ lang }) => {
 
   return (
     <section id="menu" dir={dir} className="bg-black text-white pt-20 pb-24">
-      <div className="max-w-4xl mx-auto px-5 sm:px-8">
-        <h2 className="font-black leading-[0.9] text-6xl sm:text-7xl">{tx.title}</h2>
-        <span className="block h-[5px] w-20 bg-[#E5BE01] mt-6" />
-        <p className="mt-6 text-white/70 text-lg">{tx.sub}</p>
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
+        <h2 className="font-black leading-[0.9] text-4xl sm:text-5xl">{tx.title}</h2>
+        <p className="mt-4 text-white/70 text-lg">{tx.sub}</p>
       </div>
 
       {/* Categorieën: horizontale balk met een geel streepje dat meeschuift */}
       <div className="sticky top-16 z-20 bg-black/90 backdrop-blur border-b border-white/10 mt-10">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div
             ref={barRef}
             role="tablist"
@@ -116,36 +115,54 @@ export const MenuSection: React.FC<{ lang: Language }> = ({ lang }) => {
         </div>
       </div>
 
-      {/* Het prijsbord: naam, stippellijn, prijs */}
-      <div className="max-w-4xl mx-auto px-5 sm:px-8 mt-4">
-        <ul key={active} role="tabpanel">
+      {/* L'enseigne: de categorie als groot bord, daaronder het prijsbord in twee kolommen */}
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="mt-10 sm:mt-14 flex items-end justify-between gap-6 border-b-[6px] border-[#E5BE01] pb-4">
+          <motion.h3
+            key={active}
+            initial={reduce ? false : { opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="font-black text-[#E5BE01] leading-[0.85] tracking-tighter text-[clamp(2.8rem,10.5vw,9rem)]"
+          >
+            {label(TABS.find((c) => c.id === active)!)}
+          </motion.h3>
+          <p className="shrink-0 pb-1 font-bold text-white/60 text-base sm:text-xl tabular-nums">
+            {items.length} {tx.count}
+          </p>
+        </div>
+
+        <ul key={active} role="tabpanel" className="mt-2 lg:columns-2 lg:gap-x-16">
           {items.map((item, i) => {
             const name = lang === 'ar' ? item.nameAr : lang === 'en' ? item.nameEn : item.nameFr;
             const desc = lang === 'ar' ? item.descAr : lang === 'en' ? item.descEn : item.descFr;
             const note = item.note ? NOTES[item.note]?.[lang] ?? item.note : undefined;
             return (
-              <li key={item.id} className="py-4 border-b border-white/[0.07]">
+              <li
+                key={item.id}
+                className="group break-inside-avoid -mx-3 px-3 py-4 border-b border-white/[0.08] transition-colors duration-150 hover:bg-[#E5BE01] hover:text-black"
+              >
                 <div className="flex items-baseline gap-3">
                   <span className="font-bold text-lg sm:text-xl leading-tight">{name}</span>
-                  <span aria-hidden className="flex-1 min-w-4 border-b-2 border-dotted border-white/25 translate-y-[-5px]" />
+                  <span aria-hidden className="flex-1 min-w-4 border-b-2 border-dotted border-white/25 group-hover:border-black/40 translate-y-[-5px]" />
                   <Price value={item.price} unit={t.menu.dh} index={i} animate={!reduce} />
                 </div>
                 {(note || (lang !== 'ar' && item.nameAr)) && (
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                     {lang !== 'ar' && (
-                      <span dir="rtl" className="text-sm text-white/45">
+                      <span dir="rtl" className="text-sm text-white/55 group-hover:text-black/60 transition-colors">
                         {item.nameAr}
                       </span>
                     )}
-                    {note && <span className="text-sm font-bold text-[#E5BE01]">{note}</span>}
+                    {note && <span className="text-sm font-bold text-[#E5BE01] group-hover:text-black transition-colors">{note}</span>}
                   </div>
                 )}
-                {desc && <p className="mt-1.5 text-sm sm:text-[15px] text-white/65 leading-relaxed max-w-[62ch]">{desc}</p>}
+                {desc && <p className="mt-1.5 text-sm sm:text-[15px] text-white/70 group-hover:text-black/75 leading-relaxed transition-colors">{desc}</p>}
               </li>
             );
           })}
         </ul>
-        <p className="mt-8 text-sm text-white/50">{t.menu.notice}</p>
+        <p className="mt-10 text-sm text-white/50">{t.menu.notice}</p>
       </div>
     </section>
   );
