@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, MotionValue, useReducedMotion, useScroll, useTransform } from 'motion/react';
+import { motion, MotionValue, useInView, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { Language } from '../types';
 import verre from '../assets/images/stat-verre.webp';
 
@@ -46,6 +46,7 @@ export const Manifest: React.FC<{ lang: Language }> = ({ lang }) => {
   const ref = useRef<HTMLElement>(null);
   const photoRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const seen = useInView(photoRef, { once: true, amount: 0.15 });
   const { scrollYProgress: p } = useScroll({ target: ref, offset: ['start 0.85', 'end 0.6'] });
   const { scrollYProgress: pp } = useScroll({ target: photoRef, offset: ['start end', 'end start'] });
   const y = useTransform(pp, [0, 1], ['-6%', '6%']);
@@ -63,13 +64,11 @@ export const Manifest: React.FC<{ lang: Language }> = ({ lang }) => {
         <div className="mt-10 grid gap-10 lg:gap-16 lg:grid-cols-[1.3fr_1fr] items-start">
           {/* Foto: eerst op mobiel, rechts op desktop */}
           <div className="lg:order-2 lg:sticky lg:top-24">
-            <div className="relative ms-4 mb-4 lg:max-w-[460px] lg:ms-auto">
+            <div ref={photoRef} className="relative ms-4 mb-4 lg:max-w-[460px] lg:ms-auto">
               <span aria-hidden className="absolute -start-4 top-4 -bottom-4 -end-0 bg-[#E5BE01]" style={{ insetInlineEnd: '1rem' }} />
               <motion.div
-                ref={photoRef}
                 initial={reduce ? false : { clipPath: 'inset(100% 0 0 0)' }}
-                whileInView={reduce ? undefined : { clipPath: 'inset(0% 0 0 0)' }}
-                viewport={{ once: true, amount: 0.2 }}
+                animate={seen || reduce ? { clipPath: 'inset(0% 0 0 0)' } : undefined}
                 transition={{ duration: 0.9, ease: [0.76, 0, 0.24, 1] }}
                 className="relative aspect-[4/3] lg:aspect-[3/4] overflow-hidden bg-black"
               >
