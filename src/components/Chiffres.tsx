@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { animate, motion, useInView, useReducedMotion } from 'motion/react';
+import { animate, motion, useInView, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { Language } from '../types';
 import { MENU_ITEMS } from '../data/menuData';
 import { YEAR_NOW, YEAR_START } from '../data/scenes';
+import yaourt from '../assets/images/sig-yaourt.webp';
+import petitdej from '../assets/images/sig-petitdej.webp';
+import harira from '../assets/images/sig-harira.webp';
 
-const COUNT = (to: number, on: boolean, still: boolean) => {
+const useCount = (to: number, on: boolean, still: boolean) => {
   const [v, setV] = useState(still ? to : 0);
   useEffect(() => {
     if (!on || still) return;
@@ -14,55 +17,73 @@ const COUNT = (to: number, on: boolean, still: boolean) => {
   return v;
 };
 
-const Stat: React.FC<{ n: number; label: string; on: boolean; still: boolean }> = ({ n, label, on, still }) => {
-  const v = COUNT(n, on, still);
+interface ColProps {
+  img: string;
+  alt: string;
+  num?: number;
+  text?: string;
+  label: string;
+  index: number;
+  still: boolean;
+  className?: string;
+}
+
+// Eén bewijs: een foto, met het cijfer als gele plaat over de onderkant van de foto
+const Col: React.FC<ColProps> = ({ img, alt, num, text, label, index, still, className = '' }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const on = useInView(ref, { once: true, amount: 0.3 });
+  const { scrollYProgress: p } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const y = useTransform(p, [0, 1], ['-7%', '7%']);
+  const v = useCount(num ?? 0, on, still);
+
   return (
-    <div className="border-t-[5px] border-black pt-4">
-      <p className="font-black tabular-nums leading-[0.85] tracking-tighter text-[22vw] sm:text-[9rem]">{v}</p>
-      <p className="mt-3 font-extrabold text-lg sm:text-xl">{label}</p>
+    <div ref={ref} className={`flex flex-row md:flex-col items-end md:items-stretch gap-5 md:gap-0 ${className}`}>
+      <motion.div
+        initial={still ? false : { clipPath: 'inset(100% 0 0 0)' }}
+        animate={on || still ? { clipPath: 'inset(0% 0 0 0)' } : undefined}
+        transition={{ duration: 0.9, delay: index * 0.15, ease: [0.76, 0, 0.24, 1] }}
+        className="relative w-[38%] md:w-full shrink-0 aspect-[4/5] overflow-hidden bg-black"
+      >
+        <motion.img
+          src={img}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          style={still ? undefined : { y, scale: 1.16 }}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </motion.div>
+
+      <div className="relative md:-mt-10 md:me-6 bg-[#E5BE01] md:pt-3 md:pe-4 self-end md:self-auto flex-1 md:flex-none">
+        <p
+          dir="ltr"
+          className="font-black tabular-nums leading-[0.85] tracking-tighter whitespace-nowrap text-[clamp(3.2rem,13vw,5.5rem)] md:text-[clamp(3.4rem,6.2vw,6.5rem)]"
+        >
+          {text ?? v}
+        </p>
+        <p className="mt-2 font-extrabold text-base sm:text-lg leading-tight">{label}</p>
+      </div>
     </div>
   );
 };
 
-const STAR = Array.from({ length: 16 }, (_, i) => {
-  const r = i % 2 === 0 ? 48 : 27;
-  const a = ((i * 22.5 - 90) * Math.PI) / 180;
-  return `${i === 0 ? 'M' : 'L'}${(50 + r * Math.cos(a)).toFixed(1)} ${(50 + r * Math.sin(a)).toFixed(1)}`;
-}).join(' ') + ' Z';
-
 const TEXT: Record<Language, { years: string; dishes: string; hours: string; hoursV: string }> = {
-  fr: { years: 'ans, et le même verre', dishes: 'plats au menu', hours: 'tous les jours', hoursV: '7h – 23h' },
-  ar: { years: 'سنة، ونفس الكأس', dishes: 'طبقاً في القائمة', hours: 'كل يوم', hoursV: '7:00 – 23:00' },
-  en: { years: 'years, and the same glass', dishes: 'dishes on the menu', hours: 'every day', hoursV: '7am – 11pm' },
+  fr: { years: 'ans, et le même verre', dishes: 'plats au menu', hours: 'tous les jours', hoursV: '7h–23h' },
+  ar: { years: 'سنة، ونفس الكأس', dishes: 'طبقاً في القائمة', hours: 'كل يوم', hoursV: '7:00–23:00' },
+  en: { years: 'years, and the same glass', dishes: 'dishes on the menu', hours: 'every day', hoursV: '7am–11pm' },
 };
 
-// Geel vlak: het bewijs. Wat de tijd niet heeft kunnen wegnemen, in cijfers.
+// Geel vlak: het bewijs. Wat de tijd niet heeft kunnen wegnemen, in foto's en cijfers.
 export const Chiffres: React.FC<{ lang: Language }> = ({ lang }) => {
-  const ref = useRef<HTMLElement>(null);
-  const on = useInView(ref, { once: true, amount: 0.35 });
   const reduce = !!useReducedMotion();
   const t = TEXT[lang];
 
   return (
-    <section ref={ref} dir={lang === 'ar' ? 'rtl' : 'ltr'} className="relative overflow-hidden bg-[#E5BE01] text-black py-20 sm:py-28 px-6 sm:px-12">
-      <motion.svg
-        aria-hidden
-        viewBox="0 0 100 100"
-        className="absolute -end-24 -top-24 w-[420px] h-[420px] sm:w-[640px] sm:h-[640px] opacity-[0.13]"
-        animate={reduce ? undefined : { rotate: 360 }}
-        transition={{ duration: 120, repeat: Infinity, ease: 'linear' }}
-      >
-        <path d={STAR} fill="none" stroke="#000" strokeWidth="0.6" />
-        <circle cx="50" cy="50" r="14" fill="none" stroke="#000" strokeWidth="0.6" />
-      </motion.svg>
-
-      <div className="relative max-w-5xl mx-auto grid gap-12 md:grid-cols-3">
-        <Stat n={YEAR_NOW - YEAR_START} label={t.years} on={on} still={reduce} />
-        <Stat n={MENU_ITEMS.length} label={t.dishes} on={on} still={reduce} />
-        <div className="border-t-[5px] border-black pt-4">
-          <p dir="ltr" className="font-black leading-[0.85] tracking-tighter text-[13vw] sm:text-[5.2rem] whitespace-nowrap">{t.hoursV}</p>
-          <p className="mt-3 font-extrabold text-lg sm:text-xl">{t.hours}</p>
-        </div>
+    <section dir={lang === 'ar' ? 'rtl' : 'ltr'} className="bg-[#E5BE01] text-black py-20 sm:py-28 px-6 sm:px-12 overflow-hidden">
+      <div className="max-w-6xl mx-auto grid gap-14 md:grid-cols-3 md:gap-8 items-start">
+        <Col img={yaourt} alt="" num={YEAR_NOW - YEAR_START} label={t.years} index={0} still={reduce} />
+        <Col img={petitdej} alt="" num={MENU_ITEMS.length} label={t.dishes} index={1} still={reduce} className="md:mt-20" />
+        <Col img={harira} alt="" text={t.hoursV} label={t.hours} index={2} still={reduce} className="md:mt-8" />
       </div>
     </section>
   );
