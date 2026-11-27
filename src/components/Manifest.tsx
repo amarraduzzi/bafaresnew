@@ -24,45 +24,83 @@ const COPY: Record<Language, { lead: string; words: string; hot: string[] }> = {
   },
 };
 
-const star = (n: number, ro: number, ri: number) =>
-  Array.from({ length: n * 2 }, (_, i) => {
-    const r = i % 2 === 0 ? ro : ri;
-    const a = ((i * (180 / n) - 90) * Math.PI) / 180;
-    return `${i === 0 ? 'M' : 'L'}${(50 + r * Math.cos(a)).toFixed(2)} ${(50 + r * Math.sin(a)).toFixed(2)}`;
-  }).join(' ') + ' Z';
+// ---- Marmer: aderen die zichzelf tekenen, zoals op de toonbank in de foto's ----
+const rng = (seed: number) => () => {
+  seed |= 0;
+  seed = (seed + 0x6d2b79f5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
 
-const OUTER = star(16, 49, 33);
-const MIDDLE = star(8, 33, 20);
-const INNER = star(8, 17, 9);
+interface VeinDef { d: string; w: number; o: number; a: number; b: number }
 
-// De grote zellige-ster: tekent zichzelf terwijl je leest en vult zich geel bij het laatste woord
-const BigStar: React.FC<{ p: MotionValue<number>; still: boolean }> = ({ p, still }) => {
-  const outer = useTransform(p, [0.0, 0.6], [0, 1]);
-  const middle = useTransform(p, [0.2, 0.78], [0, 1]);
-  const inner = useTransform(p, [0.4, 0.9], [0, 1]);
-  const ring = useTransform(p, [0.6, 0.95], [0, 1]);
-  const fill = useTransform(p, [0.88, 1], [0, 0.3]);
-  const rot = useTransform(p, [0, 1], [0, 45]);
-  const common = { fill: 'none', stroke: '#000', strokeWidth: 0.35, vectorEffect: 'non-scaling-stroke' as const };
-  const line = { ...common, strokeWidth: 2 };
+const walk = (r: () => number, x: number, y: number, ang: number, steps: number, wobble: number) => {
+  let d = `M${x.toFixed(1)} ${y.toFixed(1)}`;
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i < steps; i++) {
+    ang += (r() - 0.5) * wobble;
+    x += Math.cos(ang) * 17;
+    y += Math.sin(ang) * 17;
+    d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+    pts.push([x, y, ang]);
+  }
+  return { d, pts };
+};
 
+const buildVeins = (): VeinDef[] => {
+  const r = rng(1957);
+  const out: VeinDef[] = [];
+  for (let i = 0; i < 8; i++) {
+    const startX = -100 + i * 150 + r() * 80;
+    const m = walk(r, startX, -40, 0.95 + (r() - 0.5) * 0.5, 80, 0.5);
+    const a = i * 0.055;
+    out.push({ d: m.d, w: 1.1 + r() * 0.9, o: 0.5 + r() * 0.25, a, b: a + 0.5 });
+    for (let k = 0; k < 2; k++) {
+      const at = m.pts[10 + Math.floor(r() * 45)];
+      const side = r() > 0.5 ? 1 : -1;
+      const br = walk(r, at[0], at[1], at[2] + side * (0.45 + r() * 0.5), 14 + Math.floor(r() * 16), 0.6);
+      const ba = a + 0.15 + r() * 0.2;
+      out.push({ d: br.d, w: 0.6 + r() * 0.5, o: 0.35 + r() * 0.2, a: ba, b: Math.min(1, ba + 0.3) });
+    }
+  }
+  return out;
+};
+const VEINS = buildVeins();
+
+const Vein: React.FC<{ v: VeinDef; p: MotionValue<number>; still: boolean }> = ({ v, p, still }) => {
+  const len = useTransform(p, [v.a, v.b], [0, 1], { clamp: true });
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <motion.svg
-        viewBox="0 0 100 100"
-        style={still ? undefined : { rotate: rot }}
-        className="absolute top-1/2 -translate-y-1/2 start-1/2 -translate-x-1/2 sm:translate-x-0 sm:start-auto sm:-end-[18%] w-[135vw] sm:w-[min(980px,80vw)] aspect-square opacity-[0.28]"
-      >
-        <motion.path d={OUTER} fill="#E5BE01" stroke="none" style={still ? { opacity: 0.3 } : { opacity: fill }} />
-        <motion.path d={OUTER} {...line} style={still ? undefined : { pathLength: outer }} />
-        <motion.path d={MIDDLE} {...line} style={still ? undefined : { pathLength: middle }} />
-        <motion.path d={INNER} {...line} style={still ? undefined : { pathLength: inner }} />
-        <motion.circle cx="50" cy="50" r="40" {...line} style={still ? undefined : { pathLength: ring }} />
-        <motion.circle cx="50" cy="50" r="4" {...line} style={still ? undefined : { pathLength: ring }} />
-      </motion.svg>
-    </div>
+    <motion.path
+      d={v.d}
+      fill="none"
+      stroke="#8a857a"
+      strokeOpacity={v.o}
+      strokeWidth={v.w}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      vectorEffect="non-scaling-stroke"
+      style={still ? undefined : { pathLength: len }}
+    />
   );
 };
+
+const Marble: React.FC<{ p: MotionValue<number>; still: boolean }> = ({ p, still }) => (
+  <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          'radial-gradient(ellipse 60% 45% at 18% 22%, rgba(120,115,100,.07), transparent 70%), radial-gradient(ellipse 55% 40% at 85% 70%, rgba(120,115,100,.08), transparent 70%), radial-gradient(ellipse 40% 30% at 50% 100%, rgba(120,115,100,.06), transparent 70%)',
+      }}
+    />
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 w-full h-full">
+      {VEINS.map((v, i) => (
+        <Vein key={i} v={v} p={p} still={still} />
+      ))}
+    </svg>
+  </div>
+);
 
 const Word: React.FC<{ w: string; i: number; n: number; p: MotionValue<number>; hot: boolean; still: boolean }> = ({ w, i, n, p, hot, still }) => {
   const a = (i / n) * 0.85;
@@ -86,7 +124,7 @@ export const Manifest: React.FC<{ lang: Language }> = ({ lang }) => {
 
   return (
     <section ref={ref} id="histoire" dir={lang === 'ar' ? 'rtl' : 'ltr'} className="relative overflow-hidden bg-[#F7F3EA] text-black py-24 sm:py-36 px-6 sm:px-12">
-      <BigStar p={p} still={!!reduce} />
+      <Marble p={p} still={!!reduce} />
       <div className="relative z-10 max-w-5xl mx-auto">
         <p className="flex items-center gap-4 font-black text-xl sm:text-2xl">
           <span className="h-[5px] w-14 bg-black" />
