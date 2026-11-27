@@ -5,16 +5,14 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { Intro } from './components/Intro';
 import { LogoFlight, Phase } from './components/LogoFlight';
-import { Timeline } from './components/Timeline';
-import { StoryScene } from './components/StoryScene';
-import { YellowInterlude } from './components/YellowInterlude';
-import { Lantern } from './components/Lantern';
+import { Manifest } from './components/Manifest';
+import { Chiffres } from './components/Chiffres';
 import { Zellige } from './components/Zellige';
-import { Signatures } from './components/Signatures';
+import { Vitrine } from './components/Vitrine';
+import { Today } from './components/Today';
 import { MenuSection } from './components/MenuSection';
-import { FindUsSection } from './components/FindUsSection';
+import { FindUs } from './components/FindUs';
 import { Footer } from './components/Footer';
-import { SCENES } from './data/scenes';
 
 const skipIntro = () => {
   try {
@@ -47,35 +45,24 @@ export default function App() {
     el.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   }, [lang]);
 
-  const [pluie, pere, ici, chef] = SCENES;
-
   return (
     <div className="min-h-screen bg-black text-white font-sans antialiased">
       <AnimatePresence>{phase === 'intro' && <Intro onDone={finish} />}</AnimatePresence>
       <LogoFlight phase={phase} anchorRef={anchorRef} onLanded={landed} />
 
       <div aria-hidden className="grain" />
-      <Timeline />
       <Header lang={lang} setLang={setLang} />
 
       <main>
         <Hero lang={lang} ready={phase === 'done'} anchorRef={anchorRef} />
-        <StoryScene scene={pluie} lang={lang} />
-        <StoryScene scene={pere} lang={lang} />
-        <StoryScene scene={ici} lang={lang} />
-        <Lantern lang={lang} />
-        <YellowInterlude lang={lang} />
+        <Manifest lang={lang} />
+        <Chiffres lang={lang} />
         <Zellige />
-        <StoryScene scene={chef} lang={lang} />
+        <Vitrine lang={lang} />
+        <Today lang={lang} />
+        <MenuSection lang={lang} />
         <Zellige />
-        <Signatures lang={lang} />
-        <Zellige />
-
-        {/* Tijdelijk: oude secties, volgen in stap 4 en verder het nieuwe ontwerp */}
-        <div className="bg-[#FAF6EE] text-[#3B1F0F]">
-          <MenuSection lang={lang} />
-          <FindUsSection lang={lang} />
-        </div>
+        <FindUs lang={lang} />
       </main>
 
       <Footer lang={lang} />
